@@ -7,7 +7,7 @@
           "item": [
             {
               "mode": "everyX",
-              "value": 30,
+              "value": 1,
               "unit": "minutes"
             }
           ]
@@ -17,7 +17,8 @@
           "__rl": true,
           "value": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw",
           "mode": "id"
-        }
+        },
+        "event": "fileUpdated"
       },
       "id": "1cbfc46d-79fb-44dc-b609-a27a19b08c90",
       "name": "Google Doc Trigger1",
@@ -56,7 +57,7 @@
             {
               "id": "h2",
               "leftValue": "={{ $now.setZone('Asia/Kathmandu').weekday }}",
-              "rightValue": 7,
+              "rightValue": 6,
               "operator": {
                 "type": "number",
                 "operation": "notEquals"
