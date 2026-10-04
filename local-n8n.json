@@ -1,0 +1,623 @@
+{
+  "name": "Daily Work Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyX",
+              "value": 30,
+              "unit": "minutes"
+            }
+          ]
+        },
+        "triggerOn": "specificFile",
+        "fileToWatch": {
+          "__rl": true,
+          "value": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw",
+          "mode": "id"
+        }
+      },
+      "id": "1cbfc46d-79fb-44dc-b609-a27a19b08c90",
+      "name": "Google Doc Trigger1",
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        2320,
+        448
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "4bXWwl787jS4B8JC",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ $now.setZone('Asia/Kathmandu').hour }}",
+              "rightValue": 18,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "h2",
+              "leftValue": "={{ $now.setZone('Asia/Kathmandu').weekday }}",
+              "rightValue": 7,
+              "operator": {
+                "type": "number",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8241574e-9d0b-4796-adfe-1fe212443b37",
+      "name": "After 6 PM & Not Saturday?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2512,
+        448
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "repoOwner",
+              "value": "Hemraj-Adhikari",
+              "type": "string"
+            },
+            {
+              "id": "r2",
+              "name": "repoName",
+              "value": "HrmBack",
+              "type": "string"
+            },
+            {
+              "id": "u1",
+              "name": "githubUsername",
+              "value": "kushalpok01",
+              "type": "string"
+            },
+            {
+              "id": "u2",
+              "name": "authorEmail",
+              "value": "kushalpok01@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "d1",
+              "name": "since",
+              "value": "={{ $now.setZone('Asia/Kathmandu').startOf('day').toUTC().toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "d2",
+              "name": "reportDate",
+              "value": "={{ $now.setZone('Asia/Kathmandu').toFormat(\"yyyy-MM-dd\") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "96a54d91-8fbe-491d-8ae2-bfd43338aa65",
+      "name": "Settings1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2912,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $('Settings1').item.json.repoOwner }}/{{ $('Settings1').item.json.repoName }}/branches",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "501901e8-8d98-4944-8e15-93cc75262ba9",
+      "name": "Fetch Branches1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3136,
+        208
+      ],
+      "credentials": {
+        "githubApi": {
+          "id": "KVIGDScKFHKiUmeV",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/{{ $('Settings1').item.json.repoOwner }}/{{ $('Settings1').item.json.repoName }}/commits",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "githubApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "sha",
+              "value": "={{ $json.name }}"
+            },
+            {
+              "name": "since",
+              "value": "={{ $('Settings1').item.json.since }}"
+            },
+            {
+              "name": "per_page",
+              "value": "100"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            }
+          ]
+        },
+        "options": {
+          "neverError": true
+        }
+      },
+      "id": "d7a8e1b2-1345-48ef-b59c-6a19f20e4b83",
+      "name": "Fetch Branch Commits1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3300,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "githubApi": {
+          "id": "KVIGDScKFHKiUmeV",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const seen = new Set();\nconst uniqueCommits = [];\nconst settings = $('Settings1').item.json;\nconst repoName = settings.repoName || 'HrmBack';\nconst authorLogin = (settings.githubUsername || 'kushalpok01').toLowerCase();\nconst authorEmail = (settings.authorEmail || 'kushalpok01@gmail.com').toLowerCase();\n\nfunction isAuthor(c) {\n  if (!c || !c.commit) return false;\n  const login = (c.author?.login || c.committer?.login || '').toLowerCase();\n  const aEmail = (c.commit.author?.email || '').toLowerCase();\n  const cEmail = (c.commit.committer?.email || '').toLowerCase();\n  const aName = (c.commit.author?.name || '').toLowerCase();\n  const cName = (c.commit.committer?.name || '').toLowerCase();\n\n  if (authorLogin && (login === authorLogin || aEmail.startsWith(authorLogin) || cEmail.startsWith(authorLogin))) return true;\n  if (authorEmail && (aEmail === authorEmail || cEmail === authorEmail)) return true;\n  if (aEmail.includes('kushal') || cEmail.includes('kushal') || aName.includes('kushal') || cName.includes('kushal')) return true;\n  if (aEmail.includes('+kushal') || cEmail.includes('+kushal')) return true;\n  return false;\n}\n\nlet rawItems = [];\ntry {\n  rawItems = $('Fetch Branch Commits1').all();\n} catch (e) {\n  rawItems = $input.all();\n}\nif (!rawItems || rawItems.length === 0) {\n  rawItems = $input.all();\n}\n\nfor (const item of rawItems) {\n  const data = item.json;\n  if (!data) continue;\n  const list = Array.isArray(data) ? data : [data];\n  for (const c of list) {\n    if (!c || !c.sha || seen.has(c.sha)) continue;\n    if (isAuthor(c)) {\n      seen.add(c.sha);\n      uniqueCommits.push(c);\n    }\n  }\n}\n\nuniqueCommits.sort((a, b) => {\n  const dateA = new Date(b.commit?.committer?.date || b.commit?.author?.date || 0);\n  const dateB = new Date(a.commit?.committer?.date || a.commit?.author?.date || 0);\n  return dateA - dateB;\n});\n\nconst lines = uniqueCommits.map(c => {\n  const cleanMsg = (c.commit?.message || '').replace(/\\r?\\n+/g, ' — ').trim();\n  return `- [${repoName}] ${cleanMsg}`;\n});\n\nreturn [{\n  json: {\n    commitCount: uniqueCommits.length,\n    commitList: lines.join('\\n') || 'No commits today.',\n    commits: uniqueCommits\n  }\n}];"
+      },
+      "id": "834f5e43-6199-455d-b079-f00c13c3de67",
+      "name": "Prepare Commit List1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3460,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw"
+      },
+      "id": "049b882d-c827-4aed-b545-7195dff1ba9d",
+      "name": "Get Today's Manual Work1",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        3584,
+        208
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "iBdEzn1lvAXJfYsk",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "w1",
+              "name": "commitCount",
+              "value": "={{ $(\"Prepare Commit List1\").first().json.commitCount }}",
+              "type": "number"
+            },
+            {
+              "id": "w2",
+              "name": "commitList",
+              "value": "={{ $(\"Prepare Commit List1\").first().json.commitList }}",
+              "type": "string"
+            },
+            {
+              "id": "w3",
+              "name": "manualList",
+              "value": "={{ (() => { const doc = $(\"Get Today\\'s Manual Work1\").first().json; if (doc.body && Array.isArray(doc.body.content)) { const text = doc.body.content.flatMap(c => c.paragraph?.elements || []).map(e => e.textRun?.content || '').join('').trim(); return text || 'None logged today.'; } return doc.content || doc.text || 'None logged today.'; })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b4ed33af-16c5-4ff9-8538-9ed04d70b6c5",
+      "name": "Combine Work Items1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3808,
+        208
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.8-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=\"Here are the code commits I made today ({{ $json.commitCount }} total):\n\n{{ $json.commitList }}\n\nOther work I logged manually today (meetings, discussions, tasks not in commits):\n\n{{ $json.manualList }}\n\nWrite a daily summary of my work in simple, clear language that anyone can understand, while including a small amount of relevant technical detail for context.\n\nRequirements:\n\n* Keep it under 400 words.\n* Use bullet points for each separate piece of work.\n* Group related commits into a single bullet point.\n* Also include the manually logged work (meetings, discussions, other tasks) as bullets, starting with an action such as \"Attended...\", \"Discussed...\", \"Reviewed...\", \"Planned...\", or \"Worked on...\". Ignore that section if it says none were logged.\n* Start each bullet directly with an action, such as \"Fixed...\", \"Added...\", \"Updated...\", \"Implemented...\", \"Improved...\", \"Refactored...\", \"Reviewed...\", or \"Configured...\".\n* Never start a bullet with \"I\".\n* Mention what was actually achieved and the user/business impact rather than simply repeating commit messages.\n* Include light technical context where it helps explain the work, such as APIs, database changes, authentication, backend logic, UI updates, integrations, testing, or configuration.\n* Avoid deep implementation details, code-level terminology, or unnecessary technical jargon.\n* Explain technical changes in terms that a non-technical person can still understand.\n* If multiple commits are related to the same task, combine them into one bullet point.\n* Keep the language simple, professional, and clear.\n* If the repository name is \"hrmback\", refer to the project as \"Dreams Care Homes backend\".\n* For any repository other than \"hrmback\", do not mention the repository name or any project name derived from it.\n* Do not mention repository names unless the repository is \"hrmback\".\n* Do not claim work was completed if the commits or manual notes only show partial progress.\n* Do not invent business outcomes, features, or results that are not supported by the provided information.\n* Use plain text only.\n* Do not use markdown headings, tables, or bold text.\"\n* Do not use \"*\", \"-\", \"–\", \"—\", numbered lists, or any other character as a bullet."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxOutputTokens": 1200,
+          "thinkingBudget": 0
+        }
+      },
+      "id": "22172e73-f0cb-4ffd-b91a-97e85e090ab7",
+      "name": "Gemini Fallback Summary1",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        4000,
+        208
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "clPbqpbLqLUZC01c",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "summary",
+              "value": "={{ $json.output?.[0]?.content?.[0]?.text || ($json.content?.parts || []).map(p => p.text || \"\").join(\"\") || $json.text || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "model",
+              "value": "={{ $json.output ? \"OpenAI\" : \"Gemini\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f21e8393-5661-4c6b-bc23-ed1896690adc",
+      "name": "Summary Text1",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4304,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1VjjQWer2sxiSqONdD9YcKBbv33DcEJQkV4UkP8MyIMg",
+          "mode": "list",
+          "cachedResultName": "October IT Team Daily Report ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VjjQWer2sxiSqONdD9YcKBbv33DcEJQkV4UkP8MyIMg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1402091285,
+          "mode": "list",
+          "cachedResultName": "Kushal",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VjjQWer2sxiSqONdD9YcKBbv33DcEJQkV4UkP8MyIMg/edit#gid=1402091285"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date ": "={{ DateTime.fromISO($(\"Settings1\").item.json.reportDate).toFormat(\"dd/MM/yyyy\") }}",
+            "Work Report ": "={{ $json.summary }}"
+          },
+          "matchingColumns": [
+            "Date "
+          ],
+          "schema": [
+            {
+              "id": "Date ",
+              "displayName": "Date ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Work Report ",
+              "displayName": "Work Report ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "0f120d2b-210f-429c-9fa1-1ed206e753f1",
+      "name": "Log Summary to Sheet1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4640,
+        208
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "BytjtLzy6s7X243z",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "<__PLACEHOLDER_VALUE__WhatsApp Business phone number ID (sender)__>",
+        "recipientPhoneNumber": "<__PLACEHOLDER_VALUE__Recipient phone number with country code, e.g. 97798XXXXXXXX__>",
+        "textBody": "=Daily Work Summary - {{ $(\"Settings1\").item.json.reportDate }}\n\n{{ $json.summary }}",
+        "additionalFields": {}
+      },
+      "id": "1ee13385-8cbb-4f9d-b59c-f4c3fbebc8d3",
+      "name": "Send Summary on WhatsApp1",
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        4656,
+        400
+      ],
+      "webhookId": "e11fa58a-7a92-492e-92ec-d7090ad29913",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 18 * * 0-5"
+            }
+          ]
+        }
+      },
+      "id": "299a223e-641a-4925-b8fc-a0bc3fb69952",
+      "name": "Every Weekdays at 6 PM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        2432,
+        208
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Doc Trigger1": {
+      "main": [
+        [
+          {
+            "node": "After 6 PM & Not Saturday?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "After 6 PM & Not Saturday?": {
+      "main": [
+        [
+          {
+            "node": "Settings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Branches1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Branches1": {
+      "main": [
+        [
+          {
+            "node": "Fetch Branch Commits1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Branch Commits1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Commit List1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Commit List1": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Manual Work1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Manual Work1": {
+      "main": [
+        [
+          {
+            "node": "Combine Work Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Work Items1": {
+      "main": [
+        [
+          {
+            "node": "Gemini Fallback Summary1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Fallback Summary1": {
+      "main": [
+        [
+          {
+            "node": "Summary Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summary Text1": {
+      "main": [
+        [
+          {
+            "node": "Log Summary to Sheet1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Summary on WhatsApp1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every Weekdays at 6 PM": {
+      "main": [
+        [
+          {
+            "node": "Settings1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c3bc18b9-fc54-45d7-a8ba-c67bc8b24462",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d897798adbd0dbac33ace3ccd3ef4f3bf96749a3696a4a17b3df35eddcd8fe5b"
+  },
+  "nodeGroups": [
+    {
+      "id": "0e9eb76e-0c42-4b8d-9641-327a049d7fb2",
+      "name": "Collect recent commits 1",
+      "nodeIds": [
+        "96a54d91-8fbe-491d-8ae2-bfd43338aa65",
+        "501901e8-8d98-4944-8e15-93cc75262ba9",
+        "d7a8e1b2-1345-48ef-b59c-6a19f20e4b83",
+        "834f5e43-6199-455d-b079-f00c13c3de67",
+        "049b882d-c827-4aed-b545-7195dff1ba9d",
+        "b4ed33af-16c5-4ff9-8538-9ed04d70b6c5"
+      ],
+      "description": "Gathers today's GitHub commits plus today's notes from your Task Tracker Google Doc into one list"
+    }
+  ],
+  "id": "r4eYB4PEDYd1fWD2",
+  "tags": []
+}

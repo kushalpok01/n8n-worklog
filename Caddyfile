@@ -1,0 +1,6 @@
+# Caddy reverse proxy with automatic SSL/TLS via Let's Encrypt
+{$DOMAIN_NAME:localhost} {
+    reverse_proxy n8n:5678 {
+        flush_interval -1
+    }
+}
