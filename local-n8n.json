@@ -427,10 +427,33 @@
     },
     {
       "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "wa1",
+              "name": "whatsappMessage",
+              "value": "=Dear sir,\nPlease find today's work:\n\n{{ $json.summary.trim() }}\n\nRegards,\nKushal",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c112f3df-e750-4a3e-8825-2fc667e993b6",
+      "name": "Format WhatsApp Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4480,
+        400
+      ]
+    },
+    {
+      "parameters": {
         "operation": "send",
         "phoneNumberId": "<__PLACEHOLDER_VALUE__WhatsApp Business phone number ID (sender)__>",
         "recipientPhoneNumber": "<__PLACEHOLDER_VALUE__Recipient phone number with country code, e.g. 97798XXXXXXXX__>",
-        "textBody": "=Daily Work Summary - {{ $(\"Settings1\").item.json.reportDate }}\n\n{{ $json.summary }}",
+        "textBody": "={{ $json.whatsappMessage }}",
         "additionalFields": {}
       },
       "id": "1ee13385-8cbb-4f9d-b59c-f4c3fbebc8d3",
@@ -438,11 +461,66 @@
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
       "position": [
-        4656,
+        4704,
         400
       ],
       "webhookId": "e11fa58a-7a92-492e-92ec-d7090ad29913",
       "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw",
+        "simple": false
+      },
+      "id": "3a35eab5-069d-48d7-8c9c-21aab6ab2370",
+      "name": "Get Existing Doc",
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        4704,
+        580
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "iBdEzn1lvAXJfYsk",
+          "name": "Google Docs account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Get Existing Doc').item.json.documentId || '1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw' }}:batchUpdate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDocsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => { const doc = $('Get Existing Doc').item.json; const elements = doc.body?.content || []; const lastElement = elements[elements.length - 1]; const endIndex = lastElement ? (lastElement.endIndex - 1) : 1; const textToInsert = $('Format WhatsApp Message').item.json.whatsappMessage; const requests = []; if (endIndex > 1) { requests.push({ deleteContentRange: { range: { startIndex: 1, endIndex: endIndex } } }); } requests.push({ insertText: { location: { index: 1 }, text: textToInsert } }); return JSON.stringify({ requests }); })() }}"
+      },
+      "id": "96af49b9-1302-4e4d-bdbc-9278472b6ba6",
+      "name": "Overwrite Existing Doc",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4928,
+        580
+      ],
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "iBdEzn1lvAXJfYsk",
+          "name": "Google Docs account"
+        }
+      }
     },
     {
       "parameters": {
@@ -575,7 +653,34 @@
             "index": 0
           },
           {
+            "node": "Format WhatsApp Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format WhatsApp Message": {
+      "main": [
+        [
+          {
             "node": "Send Summary on WhatsApp1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Existing Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Existing Doc": {
+      "main": [
+        [
+          {
+            "node": "Overwrite Existing Doc",
             "type": "main",
             "index": 0
           }
