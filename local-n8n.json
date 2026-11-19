@@ -1,3 +1,4 @@
+
 {
   "name": "Daily Work Summary",
   "nodes": [
@@ -15,7 +16,7 @@
         "triggerOn": "specificFile",
         "fileToWatch": {
           "__rl": true,
-          "value": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw",
+          "value": "YOUR_GOOGLE_DOC_ID",
           "mode": "id"
         },
         "event": "fileUpdated"
@@ -24,16 +25,7 @@
       "name": "Google Doc Trigger1",
       "type": "n8n-nodes-base.googleDriveTrigger",
       "typeVersion": 1,
-      "position": [
-        2320,
-        448
-      ],
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "4bXWwl787jS4B8JC",
-          "name": "Google Drive account"
-        }
-      }
+      "position": [2320, 448]
     },
     {
       "parameters": {
@@ -72,10 +64,7 @@
       "name": "After 6 PM & Not Saturday?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [
-        2512,
-        448
-      ],
+      "position": [2512, 448],
       "executeOnce": true
     },
     {
@@ -85,25 +74,25 @@
             {
               "id": "r1",
               "name": "repoOwner",
-              "value": "Hemraj-Adhikari",
+              "value": "YOUR_GITHUB_OWNER",
               "type": "string"
             },
             {
               "id": "r2",
               "name": "repoName",
-              "value": "HrmBack",
+              "value": "YOUR_REPOSITORY_NAME",
               "type": "string"
             },
             {
               "id": "u1",
               "name": "githubUsername",
-              "value": "kushalpok01",
+              "value": "YOUR_GITHUB_USERNAME",
               "type": "string"
             },
             {
               "id": "u2",
               "name": "authorEmail",
-              "value": "kushalpok01@gmail.com",
+              "value": "YOUR_GITHUB_EMAIL",
               "type": "string"
             },
             {
@@ -115,7 +104,7 @@
             {
               "id": "d2",
               "name": "reportDate",
-              "value": "={{ $now.setZone('Asia/Kathmandu').toFormat(\"yyyy-MM-dd\") }}",
+              "value": "={{ $now.setZone('Asia/Kathmandu').toFormat('yyyy-MM-dd') }}",
               "type": "string"
             }
           ]
@@ -126,10 +115,7 @@
       "name": "Settings1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        2912,
-        208
-      ]
+      "position": [2912, 208]
     },
     {
       "parameters": {
@@ -160,16 +146,7 @@
       "name": "Fetch Branches1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
-      "position": [
-        3136,
-        208
-      ],
-      "credentials": {
-        "githubApi": {
-          "id": "KVIGDScKFHKiUmeV",
-          "name": "GitHub account"
-        }
-      }
+      "position": [3136, 208]
     },
     {
       "parameters": {
@@ -210,53 +187,32 @@
       "name": "Fetch Branch Commits1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
-      "position": [
-        3300,
-        208
-      ],
-      "alwaysOutputData": true,
-      "credentials": {
-        "githubApi": {
-          "id": "KVIGDScKFHKiUmeV",
-          "name": "GitHub account"
-        }
-      }
+      "position": [3300, 208],
+      "alwaysOutputData": true
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const seen = new Set();\nconst uniqueCommits = [];\nconst settings = $('Settings1').item.json;\nconst repoName = settings.repoName || 'HrmBack';\nconst authorLogin = (settings.githubUsername || 'kushalpok01').toLowerCase();\nconst authorEmail = (settings.authorEmail || 'kushalpok01@gmail.com').toLowerCase();\n\nfunction isAuthor(c) {\n  if (!c || !c.commit) return false;\n  const login = (c.author?.login || c.committer?.login || '').toLowerCase();\n  const aEmail = (c.commit.author?.email || '').toLowerCase();\n  const cEmail = (c.commit.committer?.email || '').toLowerCase();\n  const aName = (c.commit.author?.name || '').toLowerCase();\n  const cName = (c.commit.committer?.name || '').toLowerCase();\n\n  if (authorLogin && (login === authorLogin || aEmail.startsWith(authorLogin) || cEmail.startsWith(authorLogin))) return true;\n  if (authorEmail && (aEmail === authorEmail || cEmail === authorEmail)) return true;\n  if (aEmail.includes('kushal') || cEmail.includes('kushal') || aName.includes('kushal') || cName.includes('kushal')) return true;\n  if (aEmail.includes('+kushal') || cEmail.includes('+kushal')) return true;\n  return false;\n}\n\nlet rawItems = [];\ntry {\n  rawItems = $('Fetch Branch Commits1').all();\n} catch (e) {\n  rawItems = $input.all();\n}\nif (!rawItems || rawItems.length === 0) {\n  rawItems = $input.all();\n}\n\nfor (const item of rawItems) {\n  const data = item.json;\n  if (!data) continue;\n  const list = Array.isArray(data) ? data : [data];\n  for (const c of list) {\n    if (!c || !c.sha || seen.has(c.sha)) continue;\n    if (isAuthor(c)) {\n      seen.add(c.sha);\n      uniqueCommits.push(c);\n    }\n  }\n}\n\nuniqueCommits.sort((a, b) => {\n  const dateA = new Date(b.commit?.committer?.date || b.commit?.author?.date || 0);\n  const dateB = new Date(a.commit?.committer?.date || a.commit?.author?.date || 0);\n  return dateA - dateB;\n});\n\nconst lines = uniqueCommits.map(c => {\n  const cleanMsg = (c.commit?.message || '').replace(/\\r?\\n+/g, ' — ').trim();\n  return `- [${repoName}] ${cleanMsg}`;\n});\n\nreturn [{\n  json: {\n    commitCount: uniqueCommits.length,\n    commitList: lines.join('\\n') || 'No commits today.',\n    commits: uniqueCommits\n  }\n}];"
+        "jsCode": "const seen = new Set();\nconst uniqueCommits = [];\nconst settings = $('Settings1').item.json;\nconst repoName = settings.repoName || 'YOUR_REPOSITORY_NAME';\nconst authorLogin = (settings.githubUsername || '').toLowerCase();\nconst authorEmail = (settings.authorEmail || '').toLowerCase();\n\nfunction isAuthor(c) {\n  if (!c || !c.commit) return false;\n  const login = (c.author?.login || c.committer?.login || '').toLowerCase();\n  const aEmail = (c.commit.author?.email || '').toLowerCase();\n  const cEmail = (c.commit.committer?.email || '').toLowerCase();\n\n  if (authorLogin && (login === authorLogin || aEmail.startsWith(authorLogin) || cEmail.startsWith(authorLogin))) return true;\n  if (authorEmail && (aEmail === authorEmail || cEmail === authorEmail)) return true;\n  return false;\n}\n\nlet rawItems = [];\ntry {\n  rawItems = $('Fetch Branch Commits1').all();\n} catch (e) {\n  rawItems = $input.all();\n}\nif (!rawItems || rawItems.length === 0) {\n  rawItems = $input.all();\n}\n\nfor (const item of rawItems) {\n  const data = item.json;\n  if (!data) continue;\n  const list = Array.isArray(data) ? data : [data];\n  for (const c of list) {\n    if (!c || !c.sha || seen.has(c.sha)) continue;\n    if (isAuthor(c)) {\n      seen.add(c.sha);\n      uniqueCommits.push(c);\n    }\n  }\n}\n\nuniqueCommits.sort((a, b) => {\n  const dateA = new Date(b.commit?.committer?.date || b.commit?.author?.date || 0);\n  const dateB = new Date(a.commit?.committer?.date || a.commit?.author?.date || 0);\n  return dateA - dateB;\n});\n\nconst lines = uniqueCommits.map(c => {\n  const cleanMsg = (c.commit?.message || '').replace(/\\r?\\n+/g, ' — ').trim();\n  return `- [${repoName}] ${cleanMsg}`;\n});\n\nreturn [{\n  json: {\n    commitCount: uniqueCommits.length,\n    commitList: lines.join('\\n') || 'No commits today.',\n    commits: uniqueCommits\n  }\n}];"
       },
       "id": "834f5e43-6199-455d-b079-f00c13c3de67",
       "name": "Prepare Commit List1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [
-        3460,
-        208
-      ]
+      "position": [3460, 208]
     },
     {
       "parameters": {
         "operation": "get",
-        "documentURL": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw"
+        "documentURL": "YOUR_GOOGLE_DOC_ID"
       },
       "id": "049b882d-c827-4aed-b545-7195dff1ba9d",
       "name": "Get Today's Manual Work1",
       "type": "n8n-nodes-base.googleDocs",
       "typeVersion": 2,
-      "position": [
-        3584,
-        208
-      ],
+      "position": [3584, 208],
       "executeOnce": true,
-      "alwaysOutputData": true,
-      "credentials": {
-        "googleDocsOAuth2Api": {
-          "id": "iBdEzn1lvAXJfYsk",
-          "name": "Google Docs account"
-        }
-      }
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -265,19 +221,19 @@
             {
               "id": "w1",
               "name": "commitCount",
-              "value": "={{ $(\"Prepare Commit List1\").first().json.commitCount }}",
+              "value": "={{ $('Prepare Commit List1').first().json.commitCount }}",
               "type": "number"
             },
             {
               "id": "w2",
               "name": "commitList",
-              "value": "={{ $(\"Prepare Commit List1\").first().json.commitList }}",
+              "value": "={{ $('Prepare Commit List1').first().json.commitList }}",
               "type": "string"
             },
             {
               "id": "w3",
               "name": "manualList",
-              "value": "={{ (() => { const doc = $(\"Get Today\\'s Manual Work1\").first().json; if (doc.body && Array.isArray(doc.body.content)) { const text = doc.body.content.flatMap(c => c.paragraph?.elements || []).map(e => e.textRun?.content || '').join('').trim(); return text || 'None logged today.'; } return doc.content || doc.text || 'None logged today.'; })() }}",
+              "value": "={{ (() => { const doc = $('Get Today\\'s Manual Work1').first().json; if (doc.body && Array.isArray(doc.body.content)) { const text = doc.body.content.flatMap(c => c.paragraph?.elements || []).map(e => e.textRun?.content || '').join('').trim(); return text || 'None logged today.'; } return doc.content || doc.text || 'None logged today.'; })() }}",
               "type": "string"
             }
           ]
@@ -288,10 +244,7 @@
       "name": "Combine Work Items1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        3808,
-        208
-      ],
+      "position": [3808, 208],
       "executeOnce": true
     },
     {
@@ -305,7 +258,7 @@
         "messages": {
           "values": [
             {
-              "content": "=\"Here are the code commits I made today ({{ $json.commitCount }} total):\n\n{{ $json.commitList }}\n\nOther work I logged manually today (meetings, discussions, tasks not in commits):\n\n{{ $json.manualList }}\n\nWrite a daily summary of my work in simple, clear language that anyone can understand, while including a small amount of relevant technical detail for context.\n\nRequirements:\n\n* Keep it under 400 words.\n* Use bullet points for each separate piece of work.\n* Group related commits into a single bullet point.\n* Also include the manually logged work (meetings, discussions, other tasks) as bullets, starting with an action such as \"Attended...\", \"Discussed...\", \"Reviewed...\", \"Planned...\", or \"Worked on...\". Ignore that section if it says none were logged.\n* Start each bullet directly with an action, such as \"Fixed...\", \"Added...\", \"Updated...\", \"Implemented...\", \"Improved...\", \"Refactored...\", \"Reviewed...\", or \"Configured...\".\n* Never start a bullet with \"I\".\n* Mention what was actually achieved and the user/business impact rather than simply repeating commit messages.\n* Include light technical context where it helps explain the work, such as APIs, database changes, authentication, backend logic, UI updates, integrations, testing, or configuration.\n* Avoid deep implementation details, code-level terminology, or unnecessary technical jargon.\n* Explain technical changes in terms that a non-technical person can still understand.\n* If multiple commits are related to the same task, combine them into one bullet point.\n* Keep the language simple, professional, and clear.\n* If the repository name is \"hrmback\", refer to the project as \"Dreams Care Homes backend\".\n* For any repository other than \"hrmback\", do not mention the repository name or any project name derived from it.\n* Do not mention repository names unless the repository is \"hrmback\".\n* Do not claim work was completed if the commits or manual notes only show partial progress.\n* Do not invent business outcomes, features, or results that are not supported by the provided information.\n* Use plain text only.\n* Do not use markdown headings, tables, or bold text.\"\n* Do not use \"*\", \"-\", \"–\", \"—\", numbered lists, or any other character as a bullet."
+              "content": "=Here are the code commits I made today ({{ $json.commitCount }} total):\n\n{{ $json.commitList }}\n\nOther work I logged manually today (meetings, discussions, tasks not in commits):\n\n{{ $json.manualList }}\n\nWrite a daily summary of my work in simple, clear language that anyone can understand, while including a small amount of relevant technical detail for context.\n\nRequirements:\n\n* Keep it under 400 words.\n* Use bullet points for each separate piece of work.\n* Group related commits into a single bullet point.\n* Also include the manually logged work as bullets, starting with an action such as Attended, Discussed, Reviewed, Planned, or Worked on. Ignore that section if it says none were logged.\n* Start each bullet directly with an action, such as Fixed, Added, Updated, Implemented, Improved, Refactored, Reviewed, or Configured.\n* Never start a bullet with I.\n* Mention what was actually achieved and the user/business impact rather than simply repeating commit messages.\n* Include light technical context where it helps explain the work.\n* Avoid deep implementation details, code-level terminology, or unnecessary technical jargon.\n* Explain technical changes in terms that a non-technical person can still understand.\n* If multiple commits are related to the same task, combine them into one bullet point.\n* Keep the language simple, professional, and clear.\n* If the repository name is YOUR_REPOSITORY_NAME, refer to it using the configured project name where appropriate.\n* Do not mention repository names for other repositories.\n* Do not claim work was completed if the commits or manual notes only show partial progress.\n* Do not invent business outcomes, features, or results that are not supported by the provided information.\n* Use plain text only.\n* Do not use markdown headings, tables, or bold text."
             }
           ]
         },
@@ -319,16 +272,7 @@
       "name": "Gemini Fallback Summary1",
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1.2,
-      "position": [
-        4000,
-        208
-      ],
-      "credentials": {
-        "googlePalmApi": {
-          "id": "clPbqpbLqLUZC01c",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
+      "position": [4000, 208]
     },
     {
       "parameters": {
@@ -337,13 +281,13 @@
             {
               "id": "s1",
               "name": "summary",
-              "value": "={{ $json.output?.[0]?.content?.[0]?.text || ($json.content?.parts || []).map(p => p.text || \"\").join(\"\") || $json.text || \"\" }}",
+              "value": "={{ $json.output?.[0]?.content?.[0]?.text || ($json.content?.parts || []).map(p => p.text || '').join('') || $json.text || '' }}",
               "type": "string"
             },
             {
               "id": "s2",
               "name": "model",
-              "value": "={{ $json.output ? \"OpenAI\" : \"Gemini\" }}",
+              "value": "={{ $json.output ? 'OpenAI' : 'Gemini' }}",
               "type": "string"
             }
           ]
@@ -354,37 +298,32 @@
       "name": "Summary Text1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        4304,
-        208
-      ]
+      "position": [4304, 208]
     },
     {
       "parameters": {
         "operation": "appendOrUpdate",
         "documentId": {
           "__rl": true,
-          "value": "1VjjQWer2sxiSqONdD9YcKBbv33DcEJQkV4UkP8MyIMg",
+          "value": "YOUR_GOOGLE_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "October IT Team Daily Report ",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VjjQWer2sxiSqONdD9YcKBbv33DcEJQkV4UkP8MyIMg/edit?usp=drivesdk"
+          "cachedResultName": "YOUR_SPREADSHEET_NAME",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit"
         },
         "sheetName": {
           "__rl": true,
-          "value": 1402091285,
+          "value": "YOUR_SHEET_ID",
           "mode": "list",
-          "cachedResultName": "Kushal",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1VjjQWer2sxiSqONdD9YcKBbv33DcEJQkV4UkP8MyIMg/edit#gid=1402091285"
+          "cachedResultName": "YOUR_SHEET_NAME",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit"
         },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Date ": "={{ DateTime.fromISO($(\"Settings1\").item.json.reportDate).toFormat(\"dd/MM/yyyy\") }}",
+            "Date ": "={{ DateTime.fromISO($('Settings1').item.json.reportDate).toFormat('dd/MM/yyyy') }}",
             "Work Report ": "={{ $json.summary }}"
           },
-          "matchingColumns": [
-            "Date "
-          ],
+          "matchingColumns": ["Date "],
           "schema": [
             {
               "id": "Date ",
@@ -402,7 +341,7 @@
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true
+              "canBeUsedToMatch": false
             }
           ],
           "attemptToConvertTypes": false,
@@ -414,16 +353,7 @@
       "name": "Log Summary to Sheet1",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
-      "position": [
-        4640,
-        208
-      ],
-      "credentials": {
-        "googleSheetsOAuth2Api": {
-          "id": "BytjtLzy6s7X243z",
-          "name": "Google Sheets account"
-        }
-      }
+      "position": [4640, 208]
     },
     {
       "parameters": {
@@ -432,7 +362,7 @@
             {
               "id": "wa1",
               "name": "whatsappMessage",
-              "value": "=Dear sir,\nPlease find today's work:\n\n{{ $json.summary.trim() }}\n\nRegards,\nKushal",
+              "value": "=Dear sir,\nPlease find today's work:\n\n{{ $json.summary.trim() }}\n\nRegards,\nYOUR_NAME",
               "type": "string"
             }
           ]
@@ -443,16 +373,13 @@
       "name": "Format WhatsApp Message",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [
-        4480,
-        400
-      ]
+      "position": [4480, 400]
     },
     {
       "parameters": {
         "operation": "send",
-        "phoneNumberId": "<__PLACEHOLDER_VALUE__WhatsApp Business phone number ID (sender)__>",
-        "recipientPhoneNumber": "<__PLACEHOLDER_VALUE__Recipient phone number with country code, e.g. 97798XXXXXXXX__>",
+        "phoneNumberId": "YOUR_WHATSAPP_BUSINESS_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "YOUR_RECIPIENT_PHONE_NUMBER",
         "textBody": "={{ $json.whatsappMessage }}",
         "additionalFields": {}
       },
@@ -460,38 +387,26 @@
       "name": "Send Summary on WhatsApp1",
       "type": "n8n-nodes-base.whatsApp",
       "typeVersion": 1.1,
-      "position": [
-        4704,
-        400
-      ],
+      "position": [4704, 400],
       "webhookId": "e11fa58a-7a92-492e-92ec-d7090ad29913",
       "disabled": true
     },
     {
       "parameters": {
         "operation": "get",
-        "documentURL": "1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw",
+        "documentURL": "YOUR_GOOGLE_DOC_ID",
         "simple": false
       },
       "id": "3a35eab5-069d-48d7-8c9c-21aab6ab2370",
       "name": "Get Existing Doc",
       "type": "n8n-nodes-base.googleDocs",
       "typeVersion": 2,
-      "position": [
-        4704,
-        580
-      ],
-      "credentials": {
-        "googleDocsOAuth2Api": {
-          "id": "iBdEzn1lvAXJfYsk",
-          "name": "Google Docs account"
-        }
-      }
+      "position": [4704, 580]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Get Existing Doc').item.json.documentId || '1-hSVRHtzHs-RJpgSx6bcIqmnh3tcYDnsC7LGRF7JiGw' }}:batchUpdate",
+        "url": "=https://docs.googleapis.com/v1/documents/{{ $('Get Existing Doc').item.json.documentId || 'YOUR_GOOGLE_DOC_ID' }}:batchUpdate",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleDocsOAuth2Api",
         "sendHeaders": true,
@@ -511,16 +426,7 @@
       "name": "Overwrite Existing Doc",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
-      "position": [
-        4928,
-        580
-      ],
-      "credentials": {
-        "googleDocsOAuth2Api": {
-          "id": "iBdEzn1lvAXJfYsk",
-          "name": "Google Docs account"
-        }
-      }
+      "position": [4928, 580]
     },
     {
       "parameters": {
@@ -537,10 +443,7 @@
       "name": "Every Weekdays at 6 PM",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
-      "position": [
-        2432,
-        208
-      ]
+      "position": [2432, 208]
     }
   ],
   "pinData": {},
@@ -699,15 +602,14 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
   "versionId": "c3bc18b9-fc54-45d7-a8ba-c67bc8b24462",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "d897798adbd0dbac33ace3ccd3ef4f3bf96749a3696a4a17b3df35eddcd8fe5b"
+    "templateCredsSetupCompleted": false
   },
   "nodeGroups": [
     {
